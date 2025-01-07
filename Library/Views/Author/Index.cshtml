@@ -1,0 +1,55 @@
+﻿@using Library.Models
+@model IEnumerable<Library.Models.Author>
+
+
+<h2>Authors</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Author</th>
+            <th>Number of Books</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var author in Model)
+            {
+                <tr>
+                    <td>@author.Name @author.SurName @author.LastName</td>
+                    <td>@author.Books.Count()</td>
+                    <td>
+
+                        <form asp-action="Edit" method="get" style="display:inline;">
+                            <input type="hidden" name="id" value="@author.Id" />
+                            <button type="submit" class="btn btn-primary btn-sm">Edit</button>
+                        </form>
+
+                        <form asp-action="Delete" method="post" style="display:inline;">
+                            <input type="hidden" name="id" value="@author.Id" />
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+
+                        <form asp-action="Details" method="get" style="display:inline;">
+                            <input type="hidden" name="id" value="@author.Id" />
+                            <button type="submit" class="btn btn-success btn-sm">Details</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="3" class="text-center">No authors found.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+<div class="text-end">
+    <form asp-action="Create" method="get" style="display:inline;">
+        <button type="submit" class="btn btn-success btn-sm">Add Author</button>
+    </form>
+</div>

@@ -1,0 +1,139 @@
+﻿@model Library.Models.Author
+
+<h2>Details</h2>
+
+<div class="author-details">
+    <p><strong>Full Name:</strong> @Model.Name @Model.SurName @Model.LastName</p>
+    <p><strong>Birth Date:</strong> @Model.BirthDay.ToShortDateString()</p>
+</div>
+
+<hr />
+
+<h3>Books</h3>
+
+@if (Model.Books != null && Model.Books.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Count</th>
+                <th>Genre</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var book in Model.Books)
+            {
+                <tr>
+                    <td>@book.Name</td>
+                    <td>@book.Count</td>
+                    <td>@book.Genre.Name</td>
+                    <td>
+                        <form asp-action="EditBook" method="get" style="display:inline;">
+                            <input type="hidden" name="id" value="@book.Id" />
+                            <button type="submit" class="btn btn-primary  btn-sm">EditBook</button>
+                        </form>                        
+                        <form asp-action="DeleteBook" method="post" style="display:inline;">
+                            <input type="hidden" name="id" value="@book.Id" />
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No books available.</p>
+}
+
+<hr />
+
+<!-- Button to open modal -->
+<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addBookModal">
+    Add New Book
+</button>
+
+<!-- Modal -->
+<div class="modal fade" id="addBookModal" tabindex="-1" aria-labelledby="addBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addBookModalLabel">Add New Book</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addBookForm">
+                    <div class="mb-3">
+                        <label for="bookName" class="form-label">Book Name</label>
+                        <input type="text" class="form-control" id="bookName" name="Name" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="bookCount" class="form-label">Count</label>
+                        <input type="number" class="form-control" id="bookCount" name="Count" required />
+                    </div>
+                    <input type="hidden" id="authorId" value="@Model.Id" />
+
+                    <div class="form-group mt-3">
+                        <label for="GenreId" class="form-label">Genre</label>
+                        <select id="GenreId" name="GenreId" class="form-select">
+                            <option value="">Select a genre</option>
+                            @foreach (var genre in (IEnumerable<SelectListItem>)ViewBag.Genres)
+                            {
+                                <option value="@genre.Value">@genre.Text</option>
+                            }
+                        </select>
+                       
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" id="saveBookButton" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#saveBookButton').click(function () {
+            var bookData = {
+                Name: $('#bookName').val(),
+                Count: $('#bookCount').val(),
+                GenreId: $('#GenreId').val(),
+                AuthorId: $('#authorId').val()
+            };
+
+            $.ajax({
+                url: '/Author/Add',
+                type: 'POST',
+                data: bookData, // Відправляємо як стандартні дані форми
+                success: function (response) {
+                    if (response.success) {
+                        $('table tbody').append(`
+                            <tr>
+                                <td>${response.book.Name}</td>
+                                <td>${response.book.Count}</td>
+                                <td>
+                                    <a href="#" class="btn btn-primary btn-sm">Edit</a>
+                                    <a href="#" class="btn btn-danger btn-sm">Delete</a>
+                                </td>
+                            </tr>
+                        `);
+
+                        $('#addBookModal').modal('hide');
+                        $('#addBookForm')[0].reset();
+                    } else {
+                        alert('Failed to add book.');
+                    }
+                },
+                error: function () {
+                    alert('Error occurred while adding book.');
+                }
+            });
+        });
+    });
+</script>
