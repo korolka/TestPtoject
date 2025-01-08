@@ -1,13 +1,10 @@
 ﻿using Library.Models;
 using Library.Repository;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 
 namespace Library.Controllers
 {
-    //[Route("[controller]")]
     public class AuthorController : Controller
     {
         private readonly IRepository<Author> authorRepository;
@@ -21,12 +18,14 @@ namespace Library.Controllers
             this.genreRepository = genreRepository;
         }
 
+        ////Actions with authors
+
         [HttpGet]
         public async Task<ActionResult> Index()
         {
             var authors = await authorRepository.GetAllAsync();
 
-            foreach(var author in authors)
+            foreach (var author in authors)
             {
                 IEnumerable<Book> enumerable = await bookRepository.FindAsync(book => book.AuthorId == author.Id);
                 author.Books = enumerable.ToList();
@@ -41,6 +40,21 @@ namespace Library.Controllers
         }
 
 
+        [HttpPost("Create")]
+        public async Task<IActionResult> Create(Author newAuthor)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(newAuthor);
+            }
+            newAuthor.Id = Guid.NewGuid();
+
+
+            await authorRepository.AddAsync(newAuthor);
+
+            return RedirectToAction(nameof(Index));
+        }
+
         [HttpGet("Edit")]
         public async Task<IActionResult> Edit(Guid Id)
         {
@@ -48,6 +62,30 @@ namespace Library.Controllers
             if (author == null) throw new ArgumentException("Now existing author Id");
 
             return View(author);
+        }
+
+        [HttpPost("Edit")]
+        public async Task<IActionResult> Edit(Author author)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(author);
+            }
+
+            await authorRepository.UpdateAsync(author);
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost("Delete")]
+        public async Task<IActionResult> Delete(Guid Id)
+        {
+            var author = await authorRepository.GetByIdAsync(Id);
+            if (author == null) throw new ArgumentException("Now existing author Id");
+
+            await authorRepository.RemoveAsync(author);
+
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpGet("Details")]
@@ -66,21 +104,10 @@ namespace Library.Controllers
             return View(author);
         }
 
-        [HttpPost("Edit")]
-        public async Task<IActionResult> Edit(Author author)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(author);
-            }
+        //Actions with books
 
-            await authorRepository.UpdateAsync(author);
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost("BookEdit")]
-        public async Task<IActionResult> BookEdit(Book book)
+        [HttpPost("EditBook")]
+        public async Task<IActionResult> EditBook(Book book)
         {
             if (!ModelState.IsValid)
             {
@@ -88,45 +115,6 @@ namespace Library.Controllers
             }
 
             await bookRepository.UpdateAsync(book);
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost("Create")]
-        public async Task<IActionResult> Create(Author newAuthor)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(newAuthor);
-            }
-            newAuthor.Id = Guid.NewGuid();
-
-
-            await authorRepository.AddAsync(newAuthor);
-
-            return RedirectToAction(nameof(Index));
-        }
-
-
-
-        [HttpPost("Delete")]
-        public async Task<IActionResult> Delete(Guid Id)
-        {
-            var author = await authorRepository.GetByIdAsync(Id);
-            if (author == null) throw new ArgumentException("Now existing author Id");
-
-            await authorRepository.RemoveAsync(author);
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost("DeleteBook")]
-        public async Task<IActionResult> DeleteBook(Guid Id)
-        {
-            var book = await bookRepository.GetByIdAsync(Id);
-            if (book == null) throw new ArgumentException("Now existing book Id");
-
-            await bookRepository.RemoveAsync(book);
 
             return RedirectToAction(nameof(Details), "Author", new { id = book.AuthorId });
         }
@@ -141,6 +129,17 @@ namespace Library.Controllers
 
             ViewBag.Genres = new SelectList(genres, "Id", "Name");
             return View(book);
+        }
+
+        [HttpPost("DeleteBook")]
+        public async Task<IActionResult> DeleteBook(Guid Id)
+        {
+            var book = await bookRepository.GetByIdAsync(Id);
+            if (book == null) throw new ArgumentException("Now existing book Id");
+
+            await bookRepository.RemoveAsync(book);
+
+            return RedirectToAction(nameof(Details), "Author", new { id = book.AuthorId });
         }
 
         [HttpPost]
